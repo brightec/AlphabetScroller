@@ -26,13 +26,26 @@ public class MainActivity extends ListActivity {
 
     private AlphabetListAdapter adapter = new AlphabetListAdapter();
     private GestureDetector mGestureDetector;
-
+    private List<Object[]> alphabet = new ArrayList<Object[]>();
+    private HashMap<String, Integer> sections = new HashMap<String, Integer>();
     private int sideIndexHeight;
     private static float sideIndexX;
     private static float sideIndexY;
     private int indexListSize;
-    private List<Object[]> alphabet = new ArrayList<Object[]>();
-    private HashMap<String, Integer> sections = new HashMap<String, Integer>();
+
+    class SideIndexGestureListener extends GestureDetector.SimpleOnGestureListener {
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            sideIndexX = sideIndexX - distanceX;
+            sideIndexY = sideIndexY - distanceY;
+
+            if (sideIndexX >= 0 && sideIndexY >= 0) {
+                displayListItem();
+            }
+
+            return super.onScroll(e1, e2, distanceX, distanceY);
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,7 +53,7 @@ public class MainActivity extends ListActivity {
         setContentView(R.layout.list_alphabet);
 
         mGestureDetector = new GestureDetector(this, new SideIndexGestureListener());
-        
+
         List<String> countries = populateCountries();
         Collections.sort(countries);
 
@@ -50,15 +63,15 @@ public class MainActivity extends ListActivity {
         String previousLetter = null;
         Object[] tmpIndexItem = null;
         Pattern numberPattern = Pattern.compile("[0-9]");
-        
+
         for (String country : countries) {
             String firstLetter = country.substring(0, 1);
-            
+
             // Group numbers together in the scroller
             if (numberPattern.matcher(firstLetter).matches()) {
                 firstLetter = "#";
             }
-            
+
             // If we've changed to a new letter, add the previous letter to the alphabet scroller
             if (previousLetter != null && !firstLetter.equals(previousLetter)) {
                 end = rows.size() - 1;
@@ -70,18 +83,18 @@ public class MainActivity extends ListActivity {
 
                 start = end + 1;
             }
-            
+
             // Check if we need to add a header row
             if (!firstLetter.equals(previousLetter)) {
                 rows.add(new Section(firstLetter));
                 sections.put(firstLetter, start);
             }
-            
+
             // Add the country to the list
             rows.add(new Item(country));
             previousLetter = firstLetter;
         }
-        
+
         if (previousLetter != null) {
             // Save the last letter
             tmpIndexItem = new Object[3];
@@ -90,16 +103,15 @@ public class MainActivity extends ListActivity {
             tmpIndexItem[2] = rows.size() - 1;
             alphabet.add(tmpIndexItem);
         }
-        
+
         adapter.setRows(rows);
         setListAdapter(adapter);
-        
+
         updateList();
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        Log.d("chris", event.toString());
         if (mGestureDetector.onTouchEvent(event)) {
             return true;
         } else {
@@ -140,7 +152,7 @@ public class MainActivity extends ListActivity {
             tmpTV.setLayoutParams(params);
             sideIndex.addView(tmpTV);
         }
-        
+
         sideIndexHeight = sideIndex.getHeight();
 
         sideIndex.setOnTouchListener(new OnTouchListener() {
@@ -157,7 +169,7 @@ public class MainActivity extends ListActivity {
             }
         });
     }
-    
+
     public void displayListItem() {
         LinearLayout sideIndex = (LinearLayout) findViewById(R.id.sideIndex);
         sideIndexHeight = sideIndex.getHeight();
@@ -177,25 +189,6 @@ public class MainActivity extends ListActivity {
         }
     }
 
-    class SideIndexGestureListener extends GestureDetector.SimpleOnGestureListener {
-        @Override
-        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            // we know already coordinates of first touch
-            // we know as well a scroll distance
-            sideIndexX = sideIndexX - distanceX;
-            sideIndexY = sideIndexY - distanceY;
-
-            // when the user scrolls within our side index
-            // we can show for every position in it a proper
-            // item in the country list
-            if (sideIndexX >= 0 && sideIndexY >= 0) {
-                displayListItem();
-            }
-
-            return super.onScroll(e1, e2, distanceX, distanceY);
-        }
-    }
-    
     private List<String> populateCountries() {
         List<String> countries = new ArrayList<String>();
         countries.add("Afghanistan");
@@ -248,5 +241,4 @@ public class MainActivity extends ListActivity {
         countries.add("9");
         return countries;
     }
-
 }
